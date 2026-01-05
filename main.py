@@ -143,14 +143,14 @@ def input_error(func):
             return func(*args, **kwargs)
         except ValueError:
             return "Give me name and phone, please."
-        except KeyError:
-            return "Contact not found."
         except IndexError:
             return "Enter the argument for the command."
         except InvalidPhoneError:
             return "Phone must be 10 digits only."
         except InvalidBirthdayError:
             return "Invalid date format. Use DD.MM.YYYY"
+        except AttributeError:
+            return "Contact not found."
 
     return inner
 
@@ -173,6 +173,15 @@ def add_contact(args, book: AddressBook):
     if phone:
         record.add_phone(phone)
     return message
+
+# func for changing phones for a contact
+@input_error
+def change_contact(args, book):
+    name, old_phone, new_phone, *_ = args
+    record = book.find(name)
+    if old_phone:
+        record.edit_phone(old_phone, new_phone)
+    return "Phone updated."
 
 # func for showing phones by the name of the record
 @input_error
@@ -231,7 +240,7 @@ def main():
         elif command == "all":
             print(show_all(args, book))
         elif command == "change":
-            print(add_contact(args, book))
+            print(change_contact(args, book))
         elif command == "phone":
             print(show_phone(args, book))
         elif command == "add-birthday":
