@@ -3,10 +3,10 @@ from functools import wraps
 from datetime import datetime, date, timedelta
 
 # created custom exceptions to not catch same ValueError for different classes
-class InvalidPhoneError(Exception):
+class InvalidPhoneError(ValueError):
     pass
 
-class InvalidBirthdayError(Exception):
+class InvalidBirthdayError(ValueError):
     pass
 
 class Field:
@@ -31,7 +31,8 @@ class Phone(Field):
 class Birthday(Field):
     def __init__(self, value):
         try:
-            self.value = datetime.strptime(value, "%d.%m.%Y").date()
+            self.date_value = datetime.strptime(value, "%d.%m.%Y").date()
+            self.value = self.date_value.strftime("%d.%m.%Y")
         except ValueError:
             raise InvalidBirthdayError()
 
@@ -91,7 +92,8 @@ class AddressBook(UserDict):
         today = date.today()
 
         for record in self.data.values():
-            birthday_this_year = record.birthday.value.replace(year=today.year)
+            # record.birthday.value = record.birthday.value.strptime(record.birthday.value, "%d.%m.%Y").date()
+            birthday_this_year = record.birthday.date_value.replace(year=today.year)
             if birthday_this_year < today:
                 birthday_this_year = birthday_this_year.replace(year=today.year + 1)
                 
@@ -119,7 +121,7 @@ class AddressBook(UserDict):
         result = ""
         for record in self.data.values():
             phones_str = "; ".join(p.value for p in record.phones)
-            result += f"Contact name: {record.name.value}, phones: {phones_str}\n"
+            result += f"Contact name: {record.name.value}, phones: {phones_str}, birthday: {record.birthday.value}\n"
         return result.strip()
     
 
