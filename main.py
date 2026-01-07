@@ -13,6 +13,9 @@ class InvalidBirthdayError(ValueError):
 class InvalidBirthdayList(AttributeError):
     pass
 
+class InvalidOldPhone(ValueError):
+    pass
+
 class Field:
     def __init__(self, value):
         self.value = value
@@ -65,7 +68,7 @@ class Record:
             self.add_phone(new)
             self.remove_phone(old)
         else:
-            raise ValueError("Phone not found")
+            raise InvalidOldPhone()
 
     # method for finding Phone Objects
     def find_phone(self, phone):
@@ -153,6 +156,8 @@ def input_error(func):
             return "Invalid date format. Use DD.MM.YYYY"
         except InvalidBirthdayList:
             return "No upcoming birthdays."
+        except InvalidOldPhone:
+            return "No such phone number."
         except ValueError:
             return "Give me name and phone, please."
         except IndexError:
