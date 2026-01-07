@@ -99,7 +99,8 @@ class AddressBook(UserDict):
         today = date.today()
 
         for record in self.data.values():
-            # record.birthday.value = record.birthday.value.strptime(record.birthday.value, "%d.%m.%Y").date()
+            if record.birthday is None:
+                continue
             birthday_this_year = record.birthday.date_value.replace(year=today.year)
             if birthday_this_year < today:
                 birthday_this_year = birthday_this_year.replace(year=today.year + 1)
