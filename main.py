@@ -1,12 +1,16 @@
 from collections import UserDict
 from functools import wraps
 from datetime import datetime, date, timedelta
+import pickle
 
 # created custom exceptions to not catch same ValueError for different classes
 class InvalidPhoneError(ValueError):
     pass
 
 class InvalidBirthdayError(ValueError):
+    pass
+
+class InvalidBirthdayList(AttributeError):
     pass
 
 class Field:
@@ -71,7 +75,7 @@ class Record:
         return None
                 
     def __str__(self):
-        return f"Contact name: {self.name.value}, phones: {'; '.join(p.value for p in self.phones)}, birthday: {self.birthday.value}"
+        return f"Contact name: {self.name.value}, phones: {'; '.join(p.value for p in self.phones)}, birthday: {self.birthday.value if self.birthday else "Not set"}"
 
 class AddressBook(UserDict):
 
@@ -121,7 +125,7 @@ class AddressBook(UserDict):
         result = ""
         for record in self.data.values():
             phones_str = "; ".join(p.value for p in record.phones)
-            result += f"Contact name: {record.name.value}, phones: {phones_str}, birthday: {record.birthday.value}\n"
+            result += f"Contact name: {record.name.value}, phones: {phones_str}, birthday: {record.birthday.value if record.birthday else 'Not set'}\n"
         return result.strip()
     
 
@@ -143,14 +147,16 @@ def input_error(func):
     def inner(*args, **kwargs):
         try:
             return func(*args, **kwargs)
-        except ValueError:
-            return "Give me name and phone, please."
-        except IndexError:
-            return "Enter the argument for the command."
         except InvalidPhoneError:
             return "Phone must be 10 digits only."
         except InvalidBirthdayError:
             return "Invalid date format. Use DD.MM.YYYY"
+        except InvalidBirthdayList:
+            return "No upcoming birthdays."
+        except ValueError:
+            return "Give me name and phone, please."
+        except IndexError:
+            return "Enter the argument for the command."
         except AttributeError:
             return "Contact not found."
 
@@ -194,7 +200,6 @@ def show_phone(args, book: AddressBook):
 #func for showing all contacts with their phones    
 @input_error
 def show_all(args, book: AddressBook):
-    output = []
     if not book:
         return "No contacts found."
     return str(book)
@@ -217,13 +222,26 @@ def show_birthday(args, book):
 # func for showing all birthdays upcoming in 7 days
 @input_error
 def birthdays(args, book):
-    return book.get_upcoming_birthdays()
+    result = book.get_upcoming_birthdays()
+    if not result:
+        raise InvalidBirthdayList()
+    return result
 
+def save_data(book, filename="addressbook.pkl"):
+    with open(filename, "wb") as f:
+        pickle.dump(book, f)
+
+def load_data(filename="addressbook.pkl"):
+    try:
+        with open(filename, "rb") as f:
+            return pickle.load(f)
+    except FileNotFoundError:
+        return AddressBook() 
 
 
 
 def main():
-    book = AddressBook()
+    book = load_data()
 
     print(banner)
     print("Welcome to the assistant bot!")
@@ -233,6 +251,7 @@ def main():
         command, *args = parse_input(user_input)
 
         if command in ["close", "exit"]:
+            save_data(book)
             print("Good bye!")
             break
         elif command == "hello":
